@@ -1,0 +1,7 @@
+################### Rabbitmq-beat Configuration Example #########################
+
+############################# Rabbitmq-beat ######################################
+
+rabbitmq-beat:
+  # Defines how often an event is sent to the output
+  period: 1s

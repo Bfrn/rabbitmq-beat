@@ -1,0 +1,5 @@
+= Rabbitmq-beat Docs
+
+Welcome to the Rabbitmq-beat documentation.
+
+
