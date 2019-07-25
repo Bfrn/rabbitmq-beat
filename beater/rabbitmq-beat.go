@@ -3,7 +3,6 @@ package beater
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
@@ -14,14 +13,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type Task struct {
-	closed chan struct{}
-	ticker *time.Ticker
-}
-
-// Stop interrupt a running Task
-func (t *Task) Stop() {
-	close(t.closed)
+type RabbitmqConnection struct {
+	conn *amqp.Connection
+	ch   *amqp.Channel
 }
 
 // Rabbitmqbeat configuration.
@@ -55,23 +49,40 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 		return err
 	}
 
+	var connection *RabbitmqConnection
 	consumerTerminated := make(chan bool)
+	connectionChannel := make(chan *RabbitmqConnection)
 	rk := []string{"info.*", "warning.*"}
 
-	conn, ch := createConnection("admin", "admin", "vm1", "5672")
-	go startTopicExchangeConsumer(conn, ch, "logs", rk, consumerTerminated)
+	createConnection("admin", "admin", "vm1", "5672", connectionChannel)
+
+	select {
+	case <-connectionChannel:
+		connection = <-connectionChannel
+	case <-bt.done:
+		return nil
+	}
+	go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
 
 	for {
 		select {
 		case <-consumerTerminated:
 			logInfo("restarting consuming")
-			conn.Close()
-			ch.Close()
-			conn, ch := createConnection("admin", "admin", "vm1", "5672")
-			go startTopicExchangeConsumer(conn, ch, "logs", rk, consumerTerminated)
+			connection.conn.Close()
+			connection.ch.Close()
+			createConnection("admin", "admin", "vm1", "5672", connectionChannel)
+			select {
+			case <-connectionChannel:
+				connection = <-connectionChannel
+				go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
+			case <-bt.done:
+				connection.conn.Close()
+				connection.ch.Close()
+				return nil
+			}
 		case <-bt.done:
-			conn.Close()
-			ch.Close()
+			connection.conn.Close()
+			connection.ch.Close()
 			return nil
 		}
 	}
@@ -91,6 +102,14 @@ func logError(msg string, err error) {
 	logp.Err("%s: %s", msg, err)
 }
 
+func createConnection(user string, passwd string, host string, port string, connection chan<- *RabbitmqConnection) {
+	conn, ch, err := establishConnection("admin", "admin", "vm1", "5672")
+	for err != nil {
+		conn, ch, err = establishConnection("admin", "admin", "vm1", "5672")
+	}
+	connection <- &RabbitmqConnection{conn, ch}
+}
+
 // Generates rabbitmq connection URL
 func createConnectionURL(user string, passwd string, host string, port string) string {
 	var stringBuffer bytes.Buffer
@@ -104,14 +123,6 @@ func createConnectionURL(user string, passwd string, host string, port string) s
 	stringBuffer.WriteString(port)
 	stringBuffer.WriteString("/")
 	return stringBuffer.String()
-}
-
-func createConnection(user string, passwd string, host string, port string) (*amqp.Connection, *amqp.Channel) {
-	conn, ch, err := establishConnection("admin", "admin", "vm1", "5672")
-	for err != nil {
-		conn, ch, err = establishConnection("admin", "admin", "vm1", "5672")
-	}
-	return conn, ch
 }
 
 func establishConnection(user string, passwd string, host string, port string) (*amqp.Connection, *amqp.Channel, error) {
@@ -210,21 +221,25 @@ func createConsumer(ch *amqp.Channel, queueName string) (<-chan amqp.Delivery, e
 func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchangeName string, routingKeys []string, consumerTerminated chan<- bool) {
 	err := declareExchange(exchangeName, ch)
 	if err != nil {
+		consumerTerminated <- true
 		return
 	}
 
 	q, err := declareQueue(ch)
 	if err != nil {
+		consumerTerminated <- true
 		return
 	}
 
 	err = bindToTopics(routingKeys, ch, q.Name, exchangeName)
 	if err != nil {
+		consumerTerminated <- true
 		return
 	}
 
 	msgs, err := createConsumer(ch, q.Name)
 	if err != nil {
+		consumerTerminated <- true
 		return
 	}
 
