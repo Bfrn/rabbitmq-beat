@@ -13,6 +13,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const (
+	user   = "admin"
+	passwd = "admin"
+	host   = "vm1"
+	port   = "5672"
+)
+
 type RabbitmqConnection struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
@@ -54,14 +61,15 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 	connectionChannel := make(chan *RabbitmqConnection)
 	rk := []string{"info.*", "warning.*"}
 
-	createConnection("admin", "admin", "vm1", "5672", connectionChannel)
+	go createConnection(user, passwd, host, port, connectionChannel)
 
 	select {
-	case <-connectionChannel:
-		connection = <-connectionChannel
+	case connection = <-connectionChannel:
+
 	case <-bt.done:
 		return nil
 	}
+
 	go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
 
 	for {
@@ -70,14 +78,11 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 			logInfo("restarting consuming")
 			connection.conn.Close()
 			connection.ch.Close()
-			createConnection("admin", "admin", "vm1", "5672", connectionChannel)
+			go createConnection(user, passwd, host, port, connectionChannel)
 			select {
-			case <-connectionChannel:
-				connection = <-connectionChannel
+			case connection = <-connectionChannel:
 				go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
 			case <-bt.done:
-				connection.conn.Close()
-				connection.ch.Close()
 				return nil
 			}
 		case <-bt.done:
@@ -103,9 +108,9 @@ func logError(msg string, err error) {
 }
 
 func createConnection(user string, passwd string, host string, port string, connection chan<- *RabbitmqConnection) {
-	conn, ch, err := establishConnection("admin", "admin", "vm1", "5672")
+	conn, ch, err := establishConnection(user, passwd, host, port)
 	for err != nil {
-		conn, ch, err = establishConnection("admin", "admin", "vm1", "5672")
+		conn, ch, err = establishConnection(user, passwd, host, port)
 	}
 	connection <- &RabbitmqConnection{conn, ch}
 }
@@ -243,10 +248,12 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 		return
 	}
 
+	logInfo("Started consuming")
+
 	for d := range msgs {
 		logp.Info(" [x] %s", d.Body)
 	}
 
 	consumerTerminated <- true
-	logInfo("stopped consuming")
+	logInfo("Stopped consuming")
 }
