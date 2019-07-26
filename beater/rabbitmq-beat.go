@@ -8,7 +8,7 @@ import (
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
 
-	"github.com/Bfrn/rabbitmqbeat/config"
+	"hummer/rabbitmq-beat/config"
 
 	"github.com/streadway/amqp"
 )
