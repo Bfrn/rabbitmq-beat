@@ -36,5 +36,3 @@ git-init:
 
 .PHONY: git-add
 git-add:
-	git add -A
-	git commit -m "Add generated rabbitmq-beat files"

@@ -3,6 +3,7 @@ package beater
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
@@ -256,4 +257,23 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 
 	consumerTerminated <- true
 	logInfo("Stopped consuming")
+}
+
+func logConfig(host string, port string, user string, passwd string, exchange string, rk []string) {
+	logp.Info("----------------------------------Rabbitmq-Config-----------------------------------")
+	logp.Info("Host: %s", host)
+	logp.Info("Port: %s", port)
+	logp.Info("User: %s", user)
+	logp.Info("Password: %s", strings.Repeat("*", len(passwd)))
+	logp.Info("Exchange: %s", exchange)
+	logp.Info("Routing-Keys: %v", rk)
+	logp.Info("------------------------------------------------------------------------------------")
+}
+
+func logInfo(msg string) {
+	logp.Info("%s", msg)
+}
+
+func logError(msg string, err error) {
+	logp.Err("%s: %s", msg, err)
 }
