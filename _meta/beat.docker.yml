@@ -1,2 +1,15 @@
 rabbitmq-beat:
-  period: 1s
+  rabbitmq_hostname: '${RABBITMQ_HOSTNAME:localhost}'
+  rabbitmq_port: '${RABBITMQ_PORT:5672}'
+  rabbitmq_username: '${RABBITMQ_USERNAME:}'
+  rabbitmq_passwd: '${RABBITMQ_PASSWD:}'
+  rabbitmq_exchange: '${RABBITMQ_EXCHANGE:}'
+  rabbitmq_routing_keys: '${RABBITMQ_ROUTING_KEYS:*.*}'
+
+processors:
+- add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+  username: '${ELASTICSEARCH_USERNAME:}'
+  password: '${ELASTICSEARCH_PASSWORD:}'

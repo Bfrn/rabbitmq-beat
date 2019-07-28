@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	user   = "admin"
-	passwd = "admin"
-	host   = "vm1"
-	port   = "5672"
+	user     = "admin"
+	passwd   = "admin"
+	host     = "vm1"
+	port     = "5672"
+	exchange = "logs"
 )
 
 type RabbitmqConnection struct {
@@ -66,12 +67,11 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 
 	select {
 	case connection = <-connectionChannel:
-
 	case <-bt.done:
 		return nil
 	}
 
-	go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
+	go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
 
 	for {
 		select {

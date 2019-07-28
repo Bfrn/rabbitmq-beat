@@ -3,5 +3,16 @@
 ############################# Rabbitmq-beat ######################################
 
 rabbitmq-beat:
-  # Defines how often an event is sent to the output
-  period: 1s
+  rabbitmq_hostname: "localhost"
+  rabbitmq_port: 5672
+  rabbitmq_username: ""
+  rabbitmq_passwd: ""
+  rabbitmq_exchange: ""
+  rabbitmq_routing_keys: ["*.*"]
+
+output.elasticsearch:
+  hosts: ["localhost:9200"]
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
