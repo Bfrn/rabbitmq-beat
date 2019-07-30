@@ -5,6 +5,7 @@ rabbitmq-beat:
   rabbitmq_passwd: '${RABBITMQ_PASSWD:}'
   rabbitmq_exchange: '${RABBITMQ_EXCHANGE:}'
   rabbitmq_routing_keys: '${RABBITMQ_ROUTING_KEYS:*.*}'
+  rabbitmq_log_config: '${RABBITMQ_LOG_CONFIG:false}'
 
 processors:
 - add_cloud_metadata: ~

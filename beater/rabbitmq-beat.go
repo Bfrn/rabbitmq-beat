@@ -14,14 +14,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const (
-	user     = "admin"
-	passwd   = "admin"
-	host     = "vm1"
-	port     = "5672"
-	exchange = "logs"
-)
-
 type RabbitmqConnection struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
@@ -58,10 +50,21 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 		return err
 	}
 
+	var (
+		host     = bt.config.RabbitmqHostname
+		port     = bt.config.RabbitmqPort
+		user     = bt.config.RabbitmqUsername
+		passwd   = bt.config.RabbitmqPasswd
+		exchange = bt.config.RabbitmqExchange
+		rk       = bt.config.RabbitmqRoutingKeys
+	)
+	if bt.config.LogConfig == true {
+		logConfig(host, port, user, passwd, exchange, rk)
+	}
+
 	var connection *RabbitmqConnection
 	consumerTerminated := make(chan bool)
 	connectionChannel := make(chan *RabbitmqConnection)
-	rk := []string{"info.*", "warning.*"}
 
 	go createConnection(user, passwd, host, port, connectionChannel)
 
@@ -82,7 +85,7 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 			go createConnection(user, passwd, host, port, connectionChannel)
 			select {
 			case connection = <-connectionChannel:
-				go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
+				go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
 			case <-bt.done:
 				return nil
 			}
@@ -98,14 +101,6 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 func (bt *Rabbitmqbeat) Stop() {
 	bt.client.Close()
 	close(bt.done)
-}
-
-func logInfo(msg string) {
-	logp.Info("%s", msg)
-}
-
-func logError(msg string, err error) {
-	logp.Err("%s: %s", msg, err)
 }
 
 func createConnection(user string, passwd string, host string, port string, connection chan<- *RabbitmqConnection) {

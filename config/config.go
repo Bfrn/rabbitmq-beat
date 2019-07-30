@@ -11,6 +11,7 @@ type Config struct {
 	RabbitmqPasswd      string   `config:"rabbitmq_passwd"`
 	RabbitmqExchange    string   `config:"rabbitmq_exchange"`
 	RabbitmqRoutingKeys []string `config:"rabbitmq_routing_keys"`
+	LogConfig           bool     `config:"rabbitmq_log_config"`
 }
 
 // DefaultConfig for the rabbitmqbeat
@@ -21,4 +22,5 @@ var DefaultConfig = Config{
 	RabbitmqPasswd:      "",
 	RabbitmqExchange:    "",
 	RabbitmqRoutingKeys: []string{"*.*"},
+	LogConfig:           false,
 }
