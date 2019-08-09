@@ -1,0 +1,7 @@
+/.idea
+/build
+
+.DS_Store
+/rabbitmq-beat
+/rabbitmq-beat.test
+*.pyc
