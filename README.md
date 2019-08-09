@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-RabbitMQ Beat
-=======
 # Rabbitmq-beat
 
 Welcome to Rabbitmq-beat.
@@ -117,4 +114,3 @@ make release
 ```
 
 This will fetch and create all images required for the build process. The whole process to finish can take several minutes.
->>>>>>> 14a8274... Added elastic-beat-template
