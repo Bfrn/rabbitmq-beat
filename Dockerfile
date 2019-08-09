@@ -16,7 +16,7 @@ RUN go clean && \
     make
 
 
-FROM alpine AS release-stage
+FROM alpine
 
 LABEL maintainer="Björn Franke"
 
