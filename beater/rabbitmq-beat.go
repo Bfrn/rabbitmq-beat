@@ -3,21 +3,15 @@ package beater
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
 
-	"github.com/Bfrn/rabbitmqbeat/config"
+	"hummer/rabbitmq-beat/config"
 
 	"github.com/streadway/amqp"
-)
-
-const (
-	user   = "admin"
-	passwd = "admin"
-	host   = "vm1"
-	port   = "5672"
 )
 
 type RabbitmqConnection struct {
@@ -56,21 +50,31 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 		return err
 	}
 
+	var (
+		host     = bt.config.RabbitmqHostname
+		port     = bt.config.RabbitmqPort
+		user     = bt.config.RabbitmqUsername
+		passwd   = bt.config.RabbitmqPasswd
+		exchange = bt.config.RabbitmqExchange
+		rk       = bt.config.RabbitmqRoutingKeys
+	)
+	if bt.config.LogConfig == true {
+		logConfig(host, port, user, passwd, exchange, rk)
+	}
+
 	var connection *RabbitmqConnection
 	consumerTerminated := make(chan bool)
 	connectionChannel := make(chan *RabbitmqConnection)
-	rk := []string{"info.*", "warning.*"}
 
 	go createConnection(user, passwd, host, port, connectionChannel)
 
 	select {
 	case connection = <-connectionChannel:
-
 	case <-bt.done:
 		return nil
 	}
 
-	go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
+	go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
 
 	for {
 		select {
@@ -81,7 +85,7 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 			go createConnection(user, passwd, host, port, connectionChannel)
 			select {
 			case connection = <-connectionChannel:
-				go startTopicExchangeConsumer(connection.conn, connection.ch, "logs", rk, consumerTerminated)
+				go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
 			case <-bt.done:
 				return nil
 			}
@@ -97,14 +101,6 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 func (bt *Rabbitmqbeat) Stop() {
 	bt.client.Close()
 	close(bt.done)
-}
-
-func logInfo(msg string) {
-	logp.Info("%s", msg)
-}
-
-func logError(msg string, err error) {
-	logp.Err("%s: %s", msg, err)
 }
 
 func createConnection(user string, passwd string, host string, port string, connection chan<- *RabbitmqConnection) {
@@ -256,4 +252,23 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 
 	consumerTerminated <- true
 	logInfo("Stopped consuming")
+}
+
+func logConfig(host string, port string, user string, passwd string, exchange string, rk []string) {
+	logp.Info("----------------------------------Rabbitmq-Config-----------------------------------")
+	logp.Info("Host: %s", host)
+	logp.Info("Port: %s", port)
+	logp.Info("User: %s", user)
+	logp.Info("Password: %s", strings.Repeat("*", len(passwd)))
+	logp.Info("Exchange: %s", exchange)
+	logp.Info("Routing-Keys: %v", rk)
+	logp.Info("------------------------------------------------------------------------------------")
+}
+
+func logInfo(msg string) {
+	logp.Info("%s", msg)
+}
+
+func logError(msg string, err error) {
+	logp.Err("%s: %s", msg, err)
 }

@@ -15,9 +15,9 @@ NO_COLLECT=true
 
 # Initial beat setup
 .PHONY: setup
-setup: pre-setup git-add
+setup: pre-setup
 
-pre-setup: copy-vendor git-init
+pre-setup: copy-vendor
 	$(MAKE) -f $(LIBBEAT_MAKEFILE) mage ES_BEATS=$(ES_BEATS)
 	$(MAKE) -f $(LIBBEAT_MAKEFILE) update BEAT_NAME=$(BEAT_NAME) ES_BEATS=$(ES_BEATS) NO_COLLECT=$(NO_COLLECT)
 
@@ -29,12 +29,3 @@ copy-vendor:
 	rm -rf vendor/github.com/elastic/beats/.git vendor/github.com/elastic/beats/x-pack
 	mkdir -p vendor/github.com/magefile
 	cp -R ${BEAT_GOPATH}/src/github.com/elastic/beats/vendor/github.com/magefile/mage vendor/github.com/magefile
-
-.PHONY: git-init
-git-init:
-	git init
-
-.PHONY: git-add
-git-add:
-	git add -A
-	git commit -m "Add generated rabbitmq-beat files"
