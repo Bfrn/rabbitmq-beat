@@ -16,14 +16,16 @@ RUN go clean && \
     make
 
 
-FROM alpine AS release-stage
+FROM alpine
 
 LABEL maintainer="Björn Franke"
 
 COPY --from=building-stage /go/src/hummer/rabbitmq-beat/rabbitmq-beat /rabbitmq/rabbitmq-beat
 
-COPY ./rabbitmq-beat.docker.yml /rabbitmq/rabbitmq-beat.yml
+COPY --from=building-stage /go/src/hummer/rabbitmq-beat/rabbitmq-beat.docker.yml /rabbitmq/rabbitmq-beat.docker.yml
 
 WORKDIR /rabbitmq
 
-CMD ./rabbitmq-beat -c rabbitmq-beat.yml -e -d "*"
+RUN chmod go-w /rabbitmq/rabbitmq-beat.docker.yml
+
+CMD ./rabbitmq-beat -c rabbitmq-beat.docker.yml -e -d "*"
