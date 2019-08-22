@@ -1,9 +1,9 @@
 version: "3"
 services:
-  1rabbitmqbeat:
+  rabbitmqbeat:
     image: geocode.igd.fraunhofer.de:4567/bfranke/rabbitmq-beat:latest
     environment:
-      - RABBITMQ_HOSTNAME=vm1
+      - RABBITMQ_HOSTNAME=localhost
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=admin
       - RABBITMQ_PASSWD=admin
@@ -11,3 +11,5 @@ services:
       - RABBITMQ_ROUTING_KEYS=["error.*","logs.*","warning.*"]
       - RABBITMQ_LOG_CONFIG=true
     network_mode: "host"
+    ports:
+      - "8080:8080"

@@ -9,9 +9,9 @@ rabbitmq-beat:
   rabbitmq_passwd: ""
   rabbitmq_exchange: ""
   rabbitmq_routing_keys: ["*.*"]
+  rabbitmq_log_config: false
 
-output.elasticsearch:
-  hosts: ["localhost:9200"]
+output.sse.port: "8080"
 
 processors:
   - add_host_metadata: ~

@@ -252,7 +252,7 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 			Timestamp: time.Now(),
 			Fields: common.MapStr{
 				"type":        "rabbitmqbeatlog",
-				"log_message": d.Body,
+				"log_message": string(d.Body),
 			},
 		}
 		bt.client.Publish(event)
