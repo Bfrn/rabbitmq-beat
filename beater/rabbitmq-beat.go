@@ -247,12 +247,13 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 
 	logInfo("Started consuming")
 
-	for d := range msgs {
+	for msg := range msgs {
 		event := beat.Event{
 			Timestamp: time.Now(),
 			Fields: common.MapStr{
 				"type":        "rabbitmqbeatlog",
-				"log_message": string(d.Body),
+				"log_message": string(msg.Body),
+				"log_level":   strings.Split(msg.RoutingKey, ".")[0],
 			},
 		}
 		bt.client.Publish(event)
