@@ -2,7 +2,6 @@ FROM golang AS building-stage
 
 RUN apt-get update && \
     apt-get install -y apt-utils virtualenv build-essential python-pip && \
-    go get github.com/google/uuid && \
     go get github.com/streadway/amqp
 
 COPY . ${GOPATH}/src/hummer/rabbitmq-beat
