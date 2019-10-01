@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
@@ -74,7 +75,7 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 		return nil
 	}
 
-	go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
+	go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated, bt)
 
 	for {
 		select {
@@ -85,7 +86,7 @@ func (bt *Rabbitmqbeat) Run(b *beat.Beat) error {
 			go createConnection(user, passwd, host, port, connectionChannel)
 			select {
 			case connection = <-connectionChannel:
-				go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated)
+				go startTopicExchangeConsumer(connection.conn, connection.ch, exchange, rk, consumerTerminated, bt)
 			case <-bt.done:
 				return nil
 			}
@@ -219,7 +220,7 @@ func createConsumer(ch *amqp.Channel, queueName string) (<-chan amqp.Delivery, e
 	return msgs, nil
 }
 
-func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchangeName string, routingKeys []string, consumerTerminated chan<- bool) {
+func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchangeName string, routingKeys []string, consumerTerminated chan<- bool, bt *Rabbitmqbeat) {
 	err := declareExchange(exchangeName, ch)
 	if err != nil {
 		consumerTerminated <- true
@@ -246,8 +247,16 @@ func startTopicExchangeConsumer(conn *amqp.Connection, ch *amqp.Channel, exchang
 
 	logInfo("Started consuming")
 
-	for d := range msgs {
-		logp.Info(" [x] %s", d.Body)
+	for msg := range msgs {
+		event := beat.Event{
+			Timestamp: time.Now(),
+			Fields: common.MapStr{
+				"type":        "rabbitmqbeatlog",
+				"log_message": string(msg.Body),
+				"log_level":   strings.Split(msg.RoutingKey, ".")[0],
+			},
+		}
+		bt.client.Publish(event)
 	}
 
 	consumerTerminated <- true

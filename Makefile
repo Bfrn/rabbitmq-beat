@@ -17,15 +17,6 @@ NO_COLLECT=true
 .PHONY: setup
 setup: pre-setup
 
-pre-setup: copy-vendor
+pre-setup:
 	$(MAKE) -f $(LIBBEAT_MAKEFILE) mage ES_BEATS=$(ES_BEATS)
 	$(MAKE) -f $(LIBBEAT_MAKEFILE) update BEAT_NAME=$(BEAT_NAME) ES_BEATS=$(ES_BEATS) NO_COLLECT=$(NO_COLLECT)
-
-# Copy beats into vendor directory
-.PHONY: copy-vendor
-copy-vendor:
-	mkdir -p vendor/github.com/elastic
-	cp -R ${BEAT_GOPATH}/src/github.com/elastic/beats vendor/github.com/elastic/
-	rm -rf vendor/github.com/elastic/beats/.git vendor/github.com/elastic/beats/x-pack
-	mkdir -p vendor/github.com/magefile
-	cp -R ${BEAT_GOPATH}/src/github.com/elastic/beats/vendor/github.com/magefile/mage vendor/github.com/magefile

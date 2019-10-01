@@ -2,8 +2,6 @@ FROM golang AS building-stage
 
 RUN apt-get update && \
     apt-get install -y apt-utils virtualenv build-essential python-pip && \
-    mkdir -p ${GOPATH}/src/github.com/elastic && \
-    git clone https://github.com/elastic/beats ${GOPATH}/src/github.com/elastic/beats && \
     go get github.com/streadway/amqp
 
 COPY . ${GOPATH}/src/hummer/rabbitmq-beat
