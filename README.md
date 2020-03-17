@@ -124,6 +124,8 @@ make update
 
 ### Test
 
+**This feature is currently not working, an needs to be fixed!**
+
 To test Rabbitmq-beat, run the following command:
 
 ```
@@ -141,6 +143,9 @@ make coverage-report
 The test coverage is reported in the folder `./build/coverage/`
 
 ## Packaging
+
+**This feature is currently not working, an needs to be fixed!**
+
 
 The beat frameworks provides tools to crosscompile and package your beat for different platforms. This requires [docker](https://www.docker.com/) and vendoring as described above. To build packages of your beat, run the following command:
 
